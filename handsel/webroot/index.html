@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,minimum-scale=1, user-scalable=no">
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="stylesheet" href="css/layui.css">
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<title></title>
+	</head>
+	<body>
+		<div id="app">
+			<div id="form">
+				<div class="formTitle">
+					<h2>天朝一棋牌</h2>
+					<h3>特邀会员注册彩金自助领取通道</h3>
+				</div>
+				<form>
+					<label>会员账号：
+						<input id="username1" type="text" required lay-verify="required" placeholder="请输入会员账号" class="layui-input" value="">
+					</label>
+					<label>手机号码：
+						<input id="phone" type="text" required lay-verify="required" placeholder="请输入手机号" class="layui-input" value="">
+					</label>
+					<div>
+						<label>验证码：
+							<input id="code" style="width: 100px;" type="text" required lay-verify="required" placeholder="请输入验证码" class="layui-input">
+							<input id="btn" type="button" class="layui-btn layui-btn-normal" value="获取">
+						</label>
+					</div>
+					<div id="botm">
+						<a class="layui-btn" lay-submit lay-filter="formDemo" id="tianjia">立即领取</a>
+						<a id="reset" type="reset" class="layui-btn layui-btn-danger">重置内容</a>
+					</div>
+				</form>
+			</div>
+		</div>
+		<script>
+			//领取弹窗
+			function applyBtn(obj) {
+				var cid = obj.id;
+				// alert(cid);
+				var pp = "00" + cid;
+				if (cid == cid) {
+					$("#" + pp).show();
+				}
+				$('.popupClose').click(function() {
+					$("#" + pp).hide();
+				})
+			}
+
+
+			//校验用户名
+			$("input[id='username1']").blur(username);
+
+			function username() {
+				var username1 = $("input[id='username1']").val();
+				if (!(/^[A-Za-z0-9]{6,14}$/.test(username1)) && username1.trim() !== "") {
+					alert("用户名有误，请重新输入");
+					username1 = $("input[id='username1']").val('');
+					return false;
+				} else if (/^[A-Za-z0-9]{6,14}$/.test(username1)) {
+					return true;
+				}
+			};
+
+			//校验手机号
+			$("input[id='phone']").blur(sj);
+
+			function sj() {
+				var phone = $("input[id='phone']").val();
+				if (!(/^1[3456789]\d{9}$/.test(phone)) && phone.trim() !== "") {
+					alert("手机号码有误，请重新输入");
+					phone = $("input[id='phone']").val('');
+					return false;
+				} else if (/^1[3456789]\d{9}$/.test(phone)) {
+					return true;
+				}
+			};
+
+			//获取验证码
+
+
+			//验证码按钮倒计时
+			$("input[type='button']").click(btnCheck);
+
+			function btnCheck() {
+				$(this).addClass("on");
+				var time = 60;
+				$(this).attr("disabled", true);
+				sendSms();
+				var timer = setInterval(function() {
+					if (time == 0) {
+						clearInterval(timer);
+						$("input[type='button']").attr("disabled", false);
+						$("input[type='button']").val("获取验证码");
+						$("input[type='button']").removeClass("on");
+					} else {
+						$("input[type='button']").val(time + "秒");
+						time--;
+					}
+				}, 1000);
+			}
+
+			//校验验证码
+			$("input[id='code']").blur(yanz);
+
+			function yanz() {
+				var yan = $("input[id='code']").val();
+				if (!(/^[0-9]{6}$/.test(yan)) && yan.trim() !== "") {
+					alert("请重新输入验证码");
+					yan = $("input[id='code']").val('');
+					return false;
+				} else if (/^[0-9]{6}$/.test(yan)) {
+
+					return true;
+				}
+			}
+
+			//提交
+			$("#tianjia").click(submit);
+			function submit() {
+				if (username() && sj() && yanz()) {
+					tianjia();
+				} else {
+					alert("请输入信息");
+				}
+			};
+
+			//重置
+			$("#reset").click(reset);
+			function reset() {
+				var _username = $("input[id='username1']").val('');
+				var _phone = $("input[id='phone']").val('');
+				var _smsCode = $("input[id='code']").val('');
+			};
+
+
+			// 添加彩金
+			function tianjia() {
+				var _platform = 'ezn';
+				var _score = '1';
+				var _username = $("input[id='username1']").val();
+				var _phone = $("input[id='phone']").val();
+				var _smsCode = $("input[id='code']").val();
+
+				$.ajax({
+					url:'http://182.61.106.182:9501/api/score/AddScore',
+					data:{platform:_platform,score:_score,username:_username,phone:_phone,smsCode:_smsCode},
+					type:'post',
+					dataType:'json',
+					success:function(res){
+						//debugger;
+						if(res.code == 200){
+							alert(res.msg);
+						}
+					},
+					error:function(XMLHttpRequest, textStatus){
+						if(XMLHttpRequest.status == 400){
+							console.log(XMLHttpRequest);
+							console.log(textStatus);
+							var json = JSON.parse(XMLHttpRequest.responseText);
+							if(json.code == 400){
+								alert(json.msg);
+							}
+						}
+					}
+				})
+			}
+
+			// 短信验证
+			function sendSms() {
+				var _platform = 'baijia';
+				var _methodName = 'sendSms';
+				var _phone = $('#phone').val();
+
+				$.ajax({
+					url:'http://182.61.104.230:9501/api/sms/send',
+					data:{platform:_platform,methodName:_methodName,phone:_phone},
+					type:'post',
+					dataType:'json',
+					success:function(res){
+						//debugger;
+						if(res.code == 200){
+							alert(res.msg);
+						}
+					},
+					error:function(XMLHttpRequest, textStatus){
+						if(XMLHttpRequest.status == 400){
+							var json = JSON.parse(XMLHttpRequest.responseText);
+							if(json.code == 400){
+								alert(json.msg);
+							}
+						}
+					}
+				}) 
+			}
+		</script>
+	</body>
+</html>
